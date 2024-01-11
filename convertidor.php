@@ -1,9 +1,10 @@
 <?php
+require 'var.php';
 $fArchivo = file_get_contents('content.txt');
 $aContenido = explode("\r\n", $fArchivo);
 $origin = array('á', 'é', 'í', 'ó', 'ú', ' ');
 $replace = array('a', 'e', 'i', 'o', 'u', '_');
-$aStyle = '<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8" /><style>.code {font-family: "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace;}.code-wrap {white-space: pre-wrap;word-break: break-all;}.code {padding: 1.5em 1em;}.code {background: rgba(135, 131, 120, 0.15);border-radius: 3px;color: rgb(55, 53, 47);font-size: 85%;tab-size: 2;}</style></head><body>';
+$aStyle = '<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8" /><style>.code {font-family: "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace;background: rgba(135, 131, 120, 0.15);padding: 0.1em 1em 1em 1em;}.code-wrap {white-space: pre-wrap;word-break: break-all;}</style></head><body>';
 foreach ($aContenido as $iLlave => $sValor) {
 	$aValor = explode(", ", $sValor);
 	if (isset($aValor[2]) == 1) {
@@ -39,11 +40,12 @@ foreach ($aContenido as $iLlave => $sValor) {
 			$regEx = '/```.*/';
 			if (preg_match($regEx, $sValorT) == TRUE) {
 				if (!$bEsCodigo) {
-					$sValorT = preg_replace($regEx, '<pre><code>', $sValorT);
+					$sValorT = preg_replace($regEx, '<pre class="code code-wrap"><code>', $sValorT);
 					$bEsCodigo = true;			
 				} else {
 					$sValorT = str_replace('```', '</code></pre>', $sValorT);
 					$bEsCodigo = false;
+					$bEsParrafo = false;
 				}
 				$bEsLista = false;
 				$bEsTabla = false;
@@ -51,7 +53,7 @@ foreach ($aContenido as $iLlave => $sValor) {
 			if (!$bEsCodigo) {
 				// Línea vacía
 				if ($sValorT == '') {
-					$sValorT = str_replace('', '<br>', $sValorT);
+					$sValorT = str_replace('', '', $sValorT);
 					$bEsParrafo = false;
 					$bEsLista = false;
 					$bEsTabla = false;
@@ -119,9 +121,9 @@ foreach ($aContenido as $iLlave => $sValor) {
 					$sValorT = preg_replace($regEx, "<b>$1</b>", $sValorT);
 				}
 				// Imagenes (estan con ![ ]())
-				$regEx = '/!\[(.*?)\]\((.*?)\)/';
+				$regEx = '/!\[(.*?)\]\(\.\.\/\.\.\/(.*?)\)/';
 				if (preg_match($regEx, $sValorT) == TRUE) {
-					$sValorT = preg_replace($regEx, "<img src='$2' alt='$1' />", $sValorT);
+					$sValorT = preg_replace($regEx, "<img src='../" . $var->raizArchivos . "$2' alt='$1' />", $sValorT);
 					$bEsParrafo = false;
 					$bEsLista = false;
 					$bEsTabla = false;
@@ -186,13 +188,11 @@ foreach ($aContenido as $iLlave => $sValor) {
 					$iTabla = 0;
 				}
 			}
-
-
-				// Formatear el HTML y quitar las tabulaciones
-			
-			if (fwrite($file, $sValorT)) {
-				if ($bEsCodigo) {
-					fwrite($file, "\r\n");
+			if ($sValorT != '') {
+				if (fwrite($file, $sValorT)) {
+					if ($bEsCodigo) {
+						fwrite($file, "\r\n");
+					}
 				}
 			}
 		}
